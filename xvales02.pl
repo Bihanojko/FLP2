@@ -7,24 +7,94 @@ start :-
 		prompt(_, ''),
 		read_lines(LL),
 		split_lines(LL, S),
-		write(S),
-		write('\n'),
-		write_lines2(S),
 		flatten(S, XS),
-		vextex_count(XS, [], N),
-		write(N),
-		write('\n'),
+		vertex_list(XS, [], V),
+		reverse(V, VR),
+		get_stree(S, VR, T),
+		reverse(T, RT),
+		print_solutions([RT]),
 		halt.
 
 
-vextex_count([], _, 0).
-vextex_count([H|T], S, M) :- (not_member(H, S) -> vextex_count(T, [H|S], N), M is N + 1; vextex_count(T, S, N), M is N).
+get_stree(S, VR, T) :- 
+		member(X, S),
+		delete(S, X, XS),
+		create_stree(XS, VR, [X], T).
 
 
-not_member(_, []) :- !.
-not_member(X, [Head|Tail]) :-
-     X \= Head,
-    not_member(X, Tail).
+% S - list of yet not added edges
+% VR - vertex list
+% X - already added edges, current state of spanning tree
+create_stree(S, VR, X, R) :-
+		% writeln(S),
+		% writeln(X),
+		% write('\n\n\n'),
+		% check if tree already contains |V| - 1 edges
+		length(X, LX),
+		length(VR, LVR),
+		decrement(LVR, DLVR),
+		% check if there are any edges left to add
+		length(S, LS),
+		% stop conditions not met, add more edges
+		\+ stop_conditions_met(LX, DLVR, LS),
+		% test if adding current edge would create a cycle
+		member(E, S),
+		delete(S, E, ES),
+		(contains_cycle(VR, [E|X]) -> create_stree(ES, VR, X, R); create_stree(ES, VR, [E|X], R)).
+
+
+create_stree(S, VR, X, X) :- 
+		% writeln(S),
+		% writeln(X),
+		% check if tree already contains |V| - 1 edges
+		length(X, LX),
+		length(VR, LVR),
+		decrement(LVR, DLVR),
+		% check if there are any edges left to add
+		length(S, LS),
+		% stop conditions met, the tree construction is done
+		stop_conditions_met(LX, DLVR, LS).
+
+
+decrement(X, NX) :- NX is X - 1.
+
+% check if stop conditions are met -> the tree construction is done
+stop_conditions_met(LX, DLVR, LS) :-
+		is_equal(LX, DLVR);
+		is_equal(LS, 0).
+
+% check if edges in E contain a cycle
+contains_cycle(VR, E) :- maplist(check_cycle(E, []), VR).
+
+check_cycle(Edges, Visited, Curr_vertex) :- 
+		member(Curr_vertex, Visited),
+		writeln('CYCLE DETECTED'),
+		!.
+
+check_cycle(Edges, Visited, Curr_vertex) :-
+		member(Curr_edge, Edges),
+		get_next_vertex(Curr_edge, Curr_vertex, Next),
+		delete(Edges, Curr_edge, New_edges),
+		check_cycle(New_edges, [Curr_vertex|Visited], Next).
+
+
+get_next_vertex(Curr_edge, Curr_vertex, Next) :-
+		(nth0(0, Curr_edge, Curr_vertex), nth0(1, Curr_edge, Next));
+		(nth0(0, Curr_edge, Next), nth0(1, Curr_edge, Curr_vertex)).
+
+
+cycle( Curr , Visited ) :-
+  edge( Curr , Next ) ,
+  cycle( Next , [Curr|Visited] ) .
+
+
+is_equal(A, B) :- A == B.
+
+
+vertex_list([], S, S).
+vertex_list([H|T], S, M) :- (\+ member(H, S) -> vertex_list(T, [H|S], M); vertex_list(T, S, M)).
+
+
 
 
 %Reads line from stdin, terminates on LF or EOF.
@@ -74,6 +144,26 @@ write_lines2([]).
 write_lines2([H|T]) :- writeln(H), write_lines2(T). %(writeln je "knihovni funkce")
 
 
+print_solutions([]).
+print_solutions([H|T]) :-
+		print_solution(H),
+		print_solutions(T).
+
+print_solution([]).
+print_solution([H|T]) :- 
+		nth0(0, H, Vert1),
+		nth0(1, H, Vert2),
+		write(Vert1),
+		write('-'),
+		write(Vert2),
+		list_empty(T, Bool),
+		(Bool -> write('\n'); write(' '), print_solution(T)).
+
+
+list_empty([], true).
+list_empty([_|_], false).
+
+
 /* rozdeli radek na podseznamy -- pracuje od konce radku */
 %zalozit prvni (tzn. posledni) seznam:
 split_line2([],[[]]) :- !.
@@ -90,3 +180,22 @@ split_line2([H|T], [[H|G]|S1]) :- split_line2(T,[G|S1]).
 split_lines2([],[]).
 split_lines2([L|Ls],[H|T]) :- split_lines2(Ls,T), split_line2(L,H).
 
+
+
+
+% TODO REMOVE
+% NOT USED ANYMORE
+% vertex_count([], _, 0).
+% vertex_count([H|T], S, M) :- (\+ member(H, S) -> vertex_count(T, [H|S], N), M is N + 1; vertex_count(T, S, N), M is N).
+
+% not_member(_, []) :- !.
+% not_member(X, [Head|Tail]) :-
+%      X \= Head,
+%     not_member(X, Tail).
+
+
+% TODO
+% check cases when the spanning tree is not complete
+% get more solutions
+% remove duplicates
+% komentare
