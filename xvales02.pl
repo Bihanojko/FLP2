@@ -10,9 +10,9 @@ start :-
 		flatten(S, XS),
 		vertex_list(XS, [], V),
 		reverse(V, VR),
-		get_stree(S, VR, T),
-		reverse(T, RT),
-		print_solutions([RT]),
+		setof(T, get_stree(S, VR, T), Trees),
+		remove_duplicates(Trees, Unique_trees),
+		print_solutions(Unique_trees),
 		halt.
 
 
@@ -26,9 +26,6 @@ get_stree(S, VR, T) :-
 % VR - vertex list
 % X - already added edges, current state of spanning tree
 create_stree(S, VR, X, R) :-
-		% writeln(S),
-		% writeln(X),
-		% write('\n\n\n'),
 		% check if tree already contains |V| - 1 edges
 		length(X, LX),
 		length(VR, LVR),
@@ -40,12 +37,12 @@ create_stree(S, VR, X, R) :-
 		% test if adding current edge would create a cycle
 		member(E, S),
 		delete(S, E, ES),
-		(contains_cycle(VR, [E|X]) -> create_stree(ES, VR, X, R); create_stree(ES, VR, [E|X], R)).
+		contains_cycle(VR, [E|X], Bool_list),
+		flatten(Bool_list, Bool),
+		(member(false, Bool) -> create_stree(ES, VR, X, R); create_stree(ES, VR, [E|X], R)).
 
 
-create_stree(S, VR, X, X) :- 
-		% writeln(S),
-		% writeln(X),
+create_stree(S, VR, X, XR) :- 
 		% check if tree already contains |V| - 1 edges
 		length(X, LX),
 		length(VR, LVR),
@@ -53,7 +50,11 @@ create_stree(S, VR, X, X) :-
 		% check if there are any edges left to add
 		length(S, LS),
 		% stop conditions met, the tree construction is done
-		stop_conditions_met(LX, DLVR, LS).
+		stop_conditions_met(LX, DLVR, LS),
+		% check if created spaning tree is complete -> the graph is connected
+		contains_all_vertexes(VR, X, Bool),
+		(is_equal(LX, DLVR) -> XR = X; XR = []).
+		% (is_equal(LX, DLVR), is_equal(Bool, true) -> XR = X; XR = []).
 
 
 decrement(X, NX) :- NX is X - 1.
@@ -64,28 +65,30 @@ stop_conditions_met(LX, DLVR, LS) :-
 		is_equal(LS, 0).
 
 % check if edges in E contain a cycle
-contains_cycle(VR, E) :- maplist(check_cycle(E, []), VR).
+contains_cycle(VR, E, Bool) :- maplist(check_cycle(E, []), VR, Bool).
 
-check_cycle(Edges, Visited, Curr_vertex) :- 
+check_cycle(Edges, Visited, Curr_vertex, [false]) :- 
 		member(Curr_vertex, Visited),
-		writeln('CYCLE DETECTED'),
 		!.
 
-check_cycle(Edges, Visited, Curr_vertex) :-
-		member(Curr_edge, Edges),
-		get_next_vertex(Curr_edge, Curr_vertex, Next),
-		delete(Edges, Curr_edge, New_edges),
-		check_cycle(New_edges, [Curr_vertex|Visited], Next).
+check_cycle([], Visited, Curr_vertex, [true]) :- 
+		\+ member(Curr_vertex, Visited).
 
+check_cycle([H|Edges], Visited, Curr_vertex, [true|Bool]) :-
+		((nth0(0, H, Curr_vertex); nth0(1, H, Curr_vertex)) -> get_next_vertex(H, Curr_vertex, Next),
+		check_cycle(Edges, [Curr_vertex|Visited], Next, Bool); check_cycle(Edges, Visited, Curr_vertex, Bool)).
 
 get_next_vertex(Curr_edge, Curr_vertex, Next) :-
 		(nth0(0, Curr_edge, Curr_vertex), nth0(1, Curr_edge, Next));
 		(nth0(0, Curr_edge, Next), nth0(1, Curr_edge, Curr_vertex)).
 
 
-cycle( Curr , Visited ) :-
-  edge( Curr , Next ) ,
-  cycle( Next , [Curr|Visited] ) .
+contains_all_vertexes(VR, Tree, Bool) :-
+	length(VR, LVR),
+	flatten(Tree, All_vertexes),
+	vertex_list(All_vertexes, [], Vertexes),
+	length(Vertexes, LVertexes),
+	(is_equal(LVR, LVertexes) -> Bool = true; Bool = false).	
 
 
 is_equal(A, B) :- A == B.
@@ -95,13 +98,24 @@ vertex_list([], S, S).
 vertex_list([H|T], S, M) :- (\+ member(H, S) -> vertex_list(T, [H|S], M); vertex_list(T, S, M)).
 
 
+remove_duplicates([], []).
+remove_duplicates([H|Trees], [H|Unique]) :-
+	findall(Permuted_tree, permutation(H, Permuted_tree), Permutations),
+	remove_permutations(Trees, Permutations, Unique_trees),
+	remove_duplicates(Unique_trees, Unique).
+
+
+remove_permutations(Unique, [], Unique).
+remove_permutations(Tree, [H|Permuted_tree], Unique_tree) :-
+	delete(Tree, H, Unique),
+	remove_permutations(Unique, Permuted_tree, Unique_tree).
 
 
 %Reads line from stdin, terminates on LF or EOF.
 read_line(L,C) :-
 	get_char(C),
 	(isEOFEOL(C), L = [], !;
-		read_line(LL,_),% atom_codes(C,[Cd]),
+		read_line(LL,_),
 		[C|LL] = L).
 
 %Tests if character is EOF or LF.
@@ -179,23 +193,3 @@ split_line2([H|T], [[H|G]|S1]) :- split_line2(T,[G|S1]).
 % vstupem je seznam radku (kazdy radek je seznam znaku)
 split_lines2([],[]).
 split_lines2([L|Ls],[H|T]) :- split_lines2(Ls,T), split_line2(L,H).
-
-
-
-
-% TODO REMOVE
-% NOT USED ANYMORE
-% vertex_count([], _, 0).
-% vertex_count([H|T], S, M) :- (\+ member(H, S) -> vertex_count(T, [H|S], N), M is N + 1; vertex_count(T, S, N), M is N).
-
-% not_member(_, []) :- !.
-% not_member(X, [Head|Tail]) :-
-%      X \= Head,
-%     not_member(X, Tail).
-
-
-% TODO
-% check cases when the spanning tree is not complete
-% get more solutions
-% remove duplicates
-% komentare
