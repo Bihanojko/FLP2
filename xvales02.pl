@@ -66,7 +66,7 @@ stop_conditions_met(LX, DLVR, LS) :-
 contains_cycle(Vertexes, Edges, Bool) :- maplist(check_cycle(Edges, []), Vertexes, Bool).
 
 % check for current vertex if in edges there is a cycle 
-check_cycle(Edges, Visited, Curr_vertex, [false]) :- member(Curr_vertex, Visited), !.
+check_cycle(_, Visited, Curr_vertex, [false]) :- member(Curr_vertex, Visited), !.
 check_cycle([], Visited, Curr_vertex, [true]) :- \+ member(Curr_vertex, Visited).
 check_cycle([H|Edges], Visited, Curr_vertex, [true|Bool]) :-
 	((nth0(0, H, Curr_vertex); nth0(1, H, Curr_vertex)) -> get_next_vertex(H, Curr_vertex, Next),
