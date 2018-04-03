@@ -54,8 +54,9 @@ create_stree(S, VR, X, XR) :-
 	length(S, LS),
 	% stop conditions met, the tree construction is done
 	stop_conditions_met(LX, DLVR, LS),
-	% check if created spaning tree is complete -> the graph is connected
-	(is_equal(LX, DLVR) -> XR = X; XR = []).
+	% check if created spanning tree is complete and contains all vertexes -> the graph is connected
+	contains_all_vertexes(LVR, X, Bool),
+	(is_equal(LX, DLVR), is_equal(Bool, true) -> XR = X; XR = []).
 
 % check if stop conditions are met -> the spanning tree construction is done
 stop_conditions_met(LX, DLVR, LS) :-
@@ -76,6 +77,13 @@ check_cycle([H|Edges], Visited, Curr_vertex, [true|Bool]) :-
 get_next_vertex(Curr_edge, Curr_vertex, Next) :-
 	(nth0(0, Curr_edge, Curr_vertex), nth0(1, Curr_edge, Next));
 	(nth0(0, Curr_edge, Next), nth0(1, Curr_edge, Curr_vertex)).
+
+% check if spanning tree connects all vertexes
+contains_all_vertexes(LVR, Tree, Bool) :-
+ 	flatten(Tree, All_vertexes),
+ 	vertex_list(All_vertexes, [], Vertexes),
+ 	length(Vertexes, LVertexes),
+ 	(is_equal(LVR, LVertexes) -> Bool = true; Bool = false).
 
 % check if arguments are equal
 is_equal(A, B) :- A == B.
