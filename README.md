@@ -6,6 +6,9 @@ cycle is created. The algorithm stops when there are no more edges to add or whe
 the tree already contains (vertex_count - 1) edges, meaning that it connects all the 
 vertexes.
 
+The application finds all acceptable solutions by calling setof function, then 
+the solutions are reduced so that no solution can be obtained by permuting another one.   
+
 ## Usage
 
 To build the application, run 'make'. Application can be run using the command:  
