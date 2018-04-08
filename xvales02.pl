@@ -7,28 +7,28 @@ start :-
 	prompt(_, ''),
 	% read and process input lines
 	read_lines(LL),
-	split_lines(LL, S),
-	flatten(S, XS),
-	% create a list of all vertexes of given graph
-	vertex_list(XS, [], V),
-	reverse(V, VR),
+	split_lines(LL, Edges),
+	% create a list of all vertices of given graph
+	vertex_list(Edges, Vertices),
 	% get all possible spanning trees of given graph
-	setof(T, get_stree(S, VR, T), Trees),
-	% remove trees that are a permutation of another tree
-	remove_duplicates(Trees, Unique_trees),
+	findall(T, get_stree(Edges, Vertices, T), Trees),
+	% remove all duplicitous spanning trees
+	sort(Trees, Unique_trees),
 	% output valid solutions
 	print_solutions(Unique_trees),
 	halt.
 
 % get spanning tree of given graph
-get_stree(S, VR, T) :- 
-	member(X, S),
-	delete(S, X, XS),
-	create_stree(XS, VR, [X], T).
+get_stree(Edges, VR, Sorted_tree) :- 
+	member(X, Edges),
+	delete(Edges, X, RE),
+	length(VR, VC),
+	create_stree(RE, VR, VC, [X], Tree),
+	sort(Tree, Sorted_tree).
 
 % create a single spanning tree by adding edges
 % S - list of yet not added edges, VR - vertex list, X - already added edges, current state of spanning tree
-create_stree(S, VR, X, R) :-
+create_stree(S, VR, VC, X, R) :-
 	% check if tree already contains |V| - 1 edges
 	length(X, LX),
 	length(VR, LVR),
@@ -36,16 +36,14 @@ create_stree(S, VR, X, R) :-
 	% check if there are any edges left to add
 	length(S, LS),
 	% stop conditions not met, add more edges
-	\+ stop_conditions_met(LX, DLVR, LS),
+	\+ stop_conditions_met(LX, DLVR, LS, VC),
 	% test if adding current edge would create a cycle
 	member(E, S),
 	delete(S, E, ES),
-	contains_cycle(VR, [E|X], Bool_list),
-	flatten(Bool_list, Bool),
-	(member(false, Bool) -> create_stree(ES, VR, X, R); create_stree(ES, VR, [E|X], R)).
+	(contains_cycle(VR, [E|X]) -> create_stree(ES, VR, VC, X, R); create_stree(ES, VR, VC, [E|X], R)).
 
 % create a single spanning tree by adding edges
-create_stree(S, VR, X, XR) :-
+create_stree(S, VR, VC, X, XR) :-
 	% check if tree already contains |V| - 1 edges
 	length(X, LX),
 	length(VR, LVR),
@@ -53,57 +51,46 @@ create_stree(S, VR, X, XR) :-
 	% check if there are any edges left to add
 	length(S, LS),
 	% stop conditions met, the tree construction is done
-	stop_conditions_met(LX, DLVR, LS),
-	% check if created spanning tree is complete and contains all vertexes -> the graph is connected
-	contains_all_vertexes(LVR, X, Bool),
+	stop_conditions_met(LX, DLVR, LS, VC),
+	% check if created spanning tree is complete and contains all vertices -> the graph is connected
+	contains_all_vertices(LVR, X, Bool),
 	(is_equal(LX, DLVR), is_equal(Bool, true) -> XR = X; XR = []).
 
 % check if stop conditions are met -> the spanning tree construction is done
-stop_conditions_met(LX, DLVR, LS) :-
+stop_conditions_met(LX, DLVR, LS, VC) :-
 	is_equal(LX, DLVR);
 	is_equal(LS, 0).
 
 % check if edges in Edges contain a cycle
-contains_cycle(Vertexes, Edges, Bool) :- maplist(check_cycle(Edges, []), Vertexes, Bool).
+contains_cycle([], _) :- false.
+contains_cycle([H|T], Edges) :- 
+	check_cycle(Edges, H);
+	contains_cycle(T, Edges).
 
 % check for current vertex if in edges there is a cycle 
-check_cycle(_, Visited, Curr_vertex, [false]) :- member(Curr_vertex, Visited), !.
-check_cycle([], Visited, Curr_vertex, [true]) :- \+ member(Curr_vertex, Visited).
-check_cycle([H|Edges], Visited, Curr_vertex, [true|Bool]) :-
-	((nth0(0, H, Curr_vertex); nth0(1, H, Curr_vertex)) -> get_next_vertex(H, Curr_vertex, Next),
-	check_cycle(Edges, [Curr_vertex|Visited], Next, Bool); check_cycle(Edges, Visited, Curr_vertex, Bool)).
+check_cycle(Edges, Curr_vertex) :- check_cycle2(Edges, Curr_vertex, []), !.
+check_cycle2(_, Curr_vertex, Visited) :- member(Curr_vertex, Visited), !.
+check_cycle2(Edges, Curr_vertex, Visited) :-
+	member(Edge, Edges),
+	member(Curr_vertex, Edge),
+	member(Next, Edge),
+	\+ is_equal(Curr_vertex, Next),
+	delete(Edges, Edge, New_edges),
+	check_cycle2(New_edges, Next, [Curr_vertex|Visited]).
 
-% get vertex Next that is connected by an edge to vertex Curr_vertex
-get_next_vertex(Curr_edge, Curr_vertex, Next) :-
-	(nth0(0, Curr_edge, Curr_vertex), nth0(1, Curr_edge, Next));
-	(nth0(0, Curr_edge, Next), nth0(1, Curr_edge, Curr_vertex)).
-
-% check if spanning tree connects all vertexes
-contains_all_vertexes(LVR, Tree, Bool) :-
- 	flatten(Tree, All_vertexes),
- 	vertex_list(All_vertexes, [], Vertexes),
- 	length(Vertexes, LVertexes),
- 	(is_equal(LVR, LVertexes) -> Bool = true; Bool = false).
+% check if spanning tree connects all vertices
+contains_all_vertices(LVR, Tree, Bool) :-
+ 	flatten(Tree, All_vertices),
+ 	vertex_list(All_vertices, Vertices),
+ 	length(Vertices, Lvertices),
+ 	(is_equal(LVR, Lvertices) -> Bool = true; Bool = false).
 
 % check if arguments are equal
 is_equal(A, B) :- A == B.
 
-% create a list of all vertexes in a graph
-vertex_list([], S, S).
-vertex_list([H|T], S, M) :- (\+ member(H, S) -> vertex_list(T, [H|S], M); vertex_list(T, S, M)).
-
-% remove all duplicitous spanning trees
-remove_duplicates([], []).
-remove_duplicates([H|Trees], [H|Unique]) :-
-	findall(Permuted_tree, permutation(H, Permuted_tree), Permutations),
-	remove_permutations(Trees, Permutations, Unique_trees),
-	remove_duplicates(Unique_trees, Unique).
-
-% remove all permutations of current tree
-remove_permutations(Unique, [], Unique).
-remove_permutations(Tree, [H|Permuted_tree], Unique_tree) :-
-	delete(Tree, H, Unique),
-	remove_permutations(Unique, Permuted_tree, Unique_tree).
+% create a list of all vertices in a graph
+vertex_list([], []).
+vertex_list([H|T], V) :- flatten([H|T], F), sort(F, V).
 
 % read line from stdin, terminate on LF or EOF
 read_line(L,C) :-
@@ -120,18 +107,12 @@ read_lines(Ls) :-
 	read_line(L,C),
 	(C == end_of_file, Ls = []; read_lines(LLs), Ls = [L|LLs]).
 
-% split single input line
-split_line([], [[]]) :- !.
-split_line([' '|T], S1) :- !, split_line(T, S1).
-split_line([H|T], X) :-
-	split_line(T, [G|S1]),
-	flatten([[H|G]|S1], X).
-
 % split all lines of parsed input
 split_lines([], []).
-split_lines([L|Ls], [H|T]) :-
-	split_lines(Ls, T),
-	split_line(L, H).
+split_lines([[V1, ' ', V2]|Ls], [[V1, V2]|T]) :-
+	split_lines(Ls, T).
+% skip invalid lines
+split_lines([_|Ls], T) :- split_lines(Ls, T).
 
 % print list of solutions
 print_solutions([]).
@@ -141,12 +122,10 @@ print_solutions([H|T]) :-
 
 % print single solution
 print_solution([]).
-print_solution([H|T]) :- 
-	nth0(0, H, Vert1),
-	nth0(1, H, Vert2),
-	write(Vert1),
+print_solution([[V1, V2]|T]) :- 
+	write(V1),
 	write('-'),
-	write(Vert2),
+	write(V2),
 	list_empty(T, Is_last_edge),
 	(Is_last_edge -> write('\n'); write(' '), print_solution(T)).
 
