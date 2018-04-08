@@ -12,4 +12,4 @@ time: all
 	python SpanningTreeTest.py --times
 
 clean:
-	rm flp18-log
+	rm flp18-log Tests/Output/*
