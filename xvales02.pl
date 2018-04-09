@@ -20,30 +20,28 @@ start :-
 
 % get spanning tree of given graph
 get_stree(Edges, VR, Sorted_tree) :- 
-	member(X, Edges),
-	delete(Edges, X, RE),
 	length(VR, VC),
-	create_stree(RE, VR, VC, [X], Tree),
+	create_stree(Edges, VR, VC, [], Tree),
 	sort(Tree, Sorted_tree).
 
 % create a single spanning tree by adding edges
 % S - list of yet not added edges, VR - vertex list, X - already added edges, current state of spanning tree
-create_stree(S, VR, VC, X, R) :-
+create_stree([E|S], VR, VC, X, R) :-
 	% check if tree already contains |V| - 1 edges
 	length(X, LX),
 	length(VR, LVR),
 	DLVR is LVR - 1,
 	% check if there are any edges left to add
-	length(S, LS),
+	length([E|S], LS),
 	% stop conditions not met, add more edges
-	\+ stop_conditions_met(LX, DLVR, LS, VC),
+	\+ stop_conditions_met(LX, DLVR, LS),
+	Max_length is LX + LS + 1,
+	Max_length >= VC,
 	% test if adding current edge would create a cycle
-	member(E, S),
-	delete(S, E, ES),
-	(contains_cycle(VR, [E|X]) -> create_stree(ES, VR, VC, X, R); create_stree(ES, VR, VC, [E|X], R)).
+	(contains_cycle(VR, [E|X]) -> create_stree(S, VR, VC, X, R); (create_stree(S, VR, VC, X, R); create_stree(S, VR, VC, [E|X], R))).
 
 % create a single spanning tree by adding edges
-create_stree(S, VR, VC, X, XR) :-
+create_stree(S, VR, _, X, XR) :-
 	% check if tree already contains |V| - 1 edges
 	length(X, LX),
 	length(VR, LVR),
@@ -51,13 +49,13 @@ create_stree(S, VR, VC, X, XR) :-
 	% check if there are any edges left to add
 	length(S, LS),
 	% stop conditions met, the tree construction is done
-	stop_conditions_met(LX, DLVR, LS, VC),
+	stop_conditions_met(LX, DLVR, LS),
 	% check if created spanning tree is complete and contains all vertices -> the graph is connected
 	contains_all_vertices(LVR, X, Bool),
-	(is_equal(LX, DLVR), is_equal(Bool, true) -> XR = X; XR = []).
+	(is_equal(LX, DLVR), is_equal(Bool, true) -> XR = X; XR = []), !.
 
 % check if stop conditions are met -> the spanning tree construction is done
-stop_conditions_met(LX, DLVR, LS, VC) :-
+stop_conditions_met(LX, DLVR, LS) :-
 	is_equal(LX, DLVR);
 	is_equal(LS, 0).
 
