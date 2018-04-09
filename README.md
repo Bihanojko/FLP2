@@ -4,10 +4,12 @@ Application expects a set of graph edges as its input. Then it tries to find all
 spanning trees of the given graph by adding edge by edge to the tree ensuring no 
 cycle is created. The algorithm stops when there are no more edges to add or when 
 the tree already contains (vertex_count - 1) edges, meaning that it connects all the 
-vertexes.
+vertices.
 
 The application finds all acceptable solutions by calling setof function, then 
-the solutions are reduced so that no solution can be obtained by permuting another one.   
+the solutions are reduced so that no solution can be obtained by permuting another one. 
+
+If no existing spanning trees are found, the output is blank.
 
 ## Usage
 
@@ -25,22 +27,33 @@ of every input, the input is executed 10 times and then the average of times is 
 
 The testing script and data set is also available at https://github.com/Bihanojko/SpanningTreeTests.
 
+## Test input files
+The test input files are located in the Tests/Input subfolder. The tests contain various types of graphs and 
+cover also input files with errors.
+Test15.in contains only whitespace characters. Test14.in and test13.in contain unconnected graphs.   
+Input files test16.in and test18.in contain basic barbell graphs with 6 and 8 vertices. Test17.in contains 
+invalid types of line and checks whether the application can successfully skip those. 
+The remaining tests cover different types of valid graphs, such as fully connected and path graphs. 
+
 ## Run time of input files
 
 | Filename      | Run time [s]  |
 | ------------- | ------------- |
-| test1.in      | 0.0149        |
-| test2.in      | 0.0141        |
-| test3.in      | 0.0146        |
-| test4.in      | 0.0218        |
-| test5.in      | 0.013         |
-| test6.in      | 0.0131        |
-| test7.in      | 0.0132        |
-| test8.in      | 0.0191        |
-| test9.in      | 2.0672        |
-| test10.in     | 0.0116        |
-| test11.in     | 0.0252        |
-| test12.in     | 3.5508        |
-| test13.in     | 0.8351        |
-| test14.in     | 8.4561        |
-| test15.in     | 0.0115        |
+| test1.in      | 0.0108        |
+| test2.in      | 0.0109        |
+| test3.in      | 0.0109        |
+| test4.in      | 0.01          |
+| test5.in      | 0.0111        |
+| test6.in      | 0.0101        |
+| test7.in      | 0.01          |
+| test8.in      | 0.0113        |
+| test9.in      | 0.0198        |
+| test10.in     | 0.0105        |
+| test11.in     | 0.0126        |
+| test12.in     | 0.0137        |
+| test13.in     | 0.0109        |
+| test14.in     | 0.0105        |
+| test15.in     | 0.0107        |
+| test16.in     | 0.0121        |
+| test17.in     | 0.0107        |
+| test18.in     | 0.1101        |
