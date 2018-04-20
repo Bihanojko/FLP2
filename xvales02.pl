@@ -8,10 +8,12 @@ start :-
 	% read and process input lines
 	read_lines(LL),
 	split_lines(LL, Edges),
+	sort(Edges, EdgesUnique),
+	remove_self_loops(EdgesUnique, [], EdgesWOSelfLoops),
 	% create a list of all vertices of given graph
-	vertex_list(Edges, Vertices),
+	vertex_list(EdgesUnique, Vertices),
 	% get all possible spanning trees of given graph
-	findall(T, get_stree(Edges, Vertices, T), Trees),
+	findall(T, get_stree(EdgesWOSelfLoops, Vertices, T), Trees),
 	% remove all duplicitous spanning trees
 	sort(Trees, Unique_trees),
 	% output valid solutions
@@ -25,7 +27,7 @@ get_stree(Edges, VR, Sorted_tree) :-
 	sort(Tree, Sorted_tree).
 
 % create a single spanning tree by adding edges
-% S - list of yet not added edges, VR - vertex list, X - already added edges, current state of spanning tree
+% S - list of yet not added edges, VR - vertex list, X - already added edges, current spanning tree
 create_stree([E|S], VR, VC, X, R) :-
 	% check if tree already contains |V| - 1 edges
 	length(X, LX),
@@ -38,7 +40,9 @@ create_stree([E|S], VR, VC, X, R) :-
 	Max_length is LX + LS + 1,
 	Max_length >= VC,
 	% test if adding current edge would create a cycle
-	(contains_cycle(VR, [E|X]) -> create_stree(S, VR, VC, X, R); (create_stree(S, VR, VC, X, R); create_stree(S, VR, VC, [E|X], R))).
+	(contains_cycle(VR, [E|X]) -> 
+	create_stree(S, VR, VC, X, R); 
+	(create_stree(S, VR, VC, X, R); create_stree(S, VR, VC, [E|X], R))).
 
 % create a single spanning tree by adding edges
 create_stree(S, VR, _, X, XR) :-
@@ -107,10 +111,18 @@ read_lines(Ls) :-
 
 % split all lines of parsed input
 split_lines([], []).
-split_lines([[V1, ' ', V2]|Ls], [[V1, V2]|T]) :-
+split_lines([[V1, ' ', V2]|Ls], [SortedEdge|T]) :-
+	sort([V1, V2], SortedEdge),
 	split_lines(Ls, T).
 % skip invalid lines
 split_lines([_|Ls], T) :- split_lines(Ls, T).
+
+% remove self loops from edge list
+remove_self_loops([], E, E).
+remove_self_loops([E|EU], EdgesWOSelfLoops, Result) :-
+	(length(E, 1) -> 
+	remove_self_loops(EU, EdgesWOSelfLoops, Result); 
+	remove_self_loops(EU, [E|EdgesWOSelfLoops], Result)).
 
 % print list of solutions
 print_solutions([]).
