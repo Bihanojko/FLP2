@@ -11,6 +11,12 @@ the solutions are reduced so that no solution can be obtained by permuting anoth
 
 If no existing spanning trees are found, the output is blank.
 
+The application can also process self loops (e.g. "A A") and multiple edges between the 
+same two vertices (e.g. "A B\nA B" or "A B\nB A"). Self loops are removed from the list 
+of edges to add to a spanning tree since they would never be used. These edges are taken 
+into account only when creating a list of all vertices. Multiple edges are removed and 
+only one of them is left since the other edges would only produce the same spanning trees.  
+
 ## Usage
 
 To build the application, run 'make'. Application can be run using the command:  
@@ -34,6 +40,7 @@ Test15.in contains only whitespace characters. Test14.in and test13.in contain u
 Input files test16.in and test18.in contain basic barbell graphs with 6 and 8 vertices. Test17.in contains 
 invalid types of line and checks whether the application can successfully skip those. 
 The remaining tests cover different types of valid graphs, such as fully connected and path graphs. 
+Tests, which names start with the letter 'm', are a contribution of Matej Marusak (xmarus06).
 
 ## Run time of input files
 
@@ -57,3 +64,9 @@ The remaining tests cover different types of valid graphs, such as fully connect
 | test16.in     | 0.0121        |
 | test17.in     | 0.0107        |
 | test18.in     | 0.1101        |
+| mtest01.in    | 0.0136        |
+| mtest02.in    | 0.0176        |
+| mtest03.in    | 0.0143        |
+| mtest04.in    | 0.0112        |
+| mtest05.in    | 0.0111        |
+| mtest06.in    | 0.0119        |
